@@ -1,10 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 	"os"
+	"strings"
 	// Uncomment this block to pass the first stage
 	// "net"
 	// "os"
@@ -37,23 +37,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	_, err = conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
-	conn.Close()
+	startLine := strings.Split(string(data), "\r\n")[0]
+	path := strings.Split(startLine, " ")[1]
 
-	if err != nil {
-		fmt.Println("Failed to write data", err.Error())
-		os.Exit(1)
+	if path == "/" {
+		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	} else {
+		conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 	}
-
-	conn, err = l.Accept()
-
-	_, err = conn.Read(data)
-
-	fmt.Println("Data: ", string(data))
-
-	startLine := bytes.Split(data, []byte("\r\n"))[0]
-	path := bytes.Split(startLine, []byte(" "))[1]
-
-	fmt.Println(string(startLine))
-	fmt.Println(string(path))
 }
