@@ -44,6 +44,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	_, err = conn.Read(data)
+
 	fmt.Println(string(data))
 
 	startLine := bytes.Split(data, []byte("\r\n"))[0]
