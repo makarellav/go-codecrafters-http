@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net"
 	"os"
@@ -11,8 +12,9 @@ import (
 )
 
 func main() {
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
-	fmt.Println("Logs from your program will appear here!")
+	dir := flag.String("directory", ".", "Directory")
+
+	flag.Parse()
 
 	l, err := net.Listen("tcp", "0.0.0.0:4221")
 	defer l.Close()
@@ -57,6 +59,32 @@ func main() {
 				randomString, _ := strings.CutPrefix(path, "/echo/")
 
 				conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s\r\n", len(randomString), randomString)))
+			case strings.HasPrefix(path, "/files/"):
+				if dir == nil {
+					conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+
+					return
+				}
+
+				filename, _ := strings.CutPrefix(path, "/files/")
+
+				pathToFile := *dir + filename
+
+				if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
+					conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+
+					return
+				}
+
+				data, err := os.ReadFile(pathToFile)
+
+				if err != nil {
+					fmt.Println("Failed to open a file ", pathToFile, err.Error())
+
+					return
+				}
+
+				conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: %d\r\n\r\n%s\r\n", len(data), string(data))))
 			default:
 				conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 			}
