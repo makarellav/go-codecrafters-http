@@ -37,6 +37,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	_, err = conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+
+	if err != nil {
+		fmt.Println("Failed to write data", err.Error())
+		os.Exit(1)
+	}
+
+	conn, err = l.Accept()
+
+	_, err = conn.Read(data)
+
 	fmt.Println("Data: ", string(data))
 
 	startLine := bytes.Split(data, []byte("\r\n"))[0]
@@ -44,11 +55,4 @@ func main() {
 
 	fmt.Println(string(startLine))
 	fmt.Println(string(path))
-
-	_, err = conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
-
-	if err != nil {
-		fmt.Println("Failed to write data", err.Error())
-		os.Exit(1)
-	}
 }
