@@ -44,6 +44,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	fmt.Println(string(data))
+
 	startLine := bytes.Split(data, []byte("\r\n"))[0]
 	path := bytes.Split(startLine, []byte(" "))[1]
 
