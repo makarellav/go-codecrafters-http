@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"os"
@@ -42,4 +43,9 @@ func main() {
 		fmt.Println("Failed to write data", err.Error())
 		os.Exit(1)
 	}
+
+	startLine := bytes.Split(data, []byte("\r\n"))[0]
+	path := bytes.Split(startLine, []byte(" "))[1]
+
+	fmt.Println(path)
 }
