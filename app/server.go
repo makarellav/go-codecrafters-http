@@ -93,6 +93,8 @@ func main() {
 					reqBody, _ := strings.CutPrefix(reqFields[len(reqFields)-1], "\r\n")
 					fileData := bytes.Trim([]byte(reqBody), "\x00")
 
+					fmt.Println(string(fileData))
+
 					err = os.WriteFile(filepath, fileData, 0644)
 
 					if err != nil {
