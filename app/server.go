@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"net"
@@ -44,9 +45,9 @@ func main() {
 			}
 
 			reqFields := strings.Split(string(data), "\r\n")
-			startLine := reqFields[0]
+			startLineParts := strings.Fields(reqFields[0])
 
-			path := strings.Fields(startLine)[1]
+			path := startLineParts[1]
 
 			switch {
 			case path == "/":
@@ -60,31 +61,46 @@ func main() {
 
 				conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s\r\n", len(randomString), randomString)))
 			case strings.HasPrefix(path, "/files/"):
-				if dir == nil {
-					conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
-
-					return
-				}
+				method := startLineParts[0]
 
 				filename, _ := strings.CutPrefix(path, "/files/")
+				filepath := strings.Join([]string{*dir, filename}, string(os.PathSeparator))
 
-				pathToFile := *dir + filename
+				switch method {
+				case "GET":
+					if dir == nil {
+						conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 
-				if _, err := os.Stat(pathToFile); os.IsNotExist(err) {
-					conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+						return
+					}
 
-					return
+					if _, err := os.Stat(filepath); os.IsNotExist(err) {
+						conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+
+						return
+					}
+
+					data, err := os.ReadFile(filepath)
+
+					if err != nil {
+						fmt.Println("Failed to open a file ", filepath, err.Error())
+
+						return
+					}
+
+					conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: %d\r\n\r\n%s\r\n", len(data), string(data))))
+				case "POST":
+					reqBody, _ := strings.CutPrefix(reqFields[len(reqFields)-1], "\r\n")
+					fileData := bytes.Trim([]byte(reqBody), "\x00")
+
+					err = os.WriteFile(filepath, fileData, 0644)
+
+					if err != nil {
+						fmt.Println("Failed to write a file ", filepath, err.Error())
+					}
+
+					conn.Write([]byte("HTTP/1.1 201 Created\r\n"))
 				}
-
-				data, err := os.ReadFile(pathToFile)
-
-				if err != nil {
-					fmt.Println("Failed to open a file ", pathToFile, err.Error())
-
-					return
-				}
-
-				conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: %d\r\n\r\n%s\r\n", len(data), string(data))))
 			default:
 				conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 			}
