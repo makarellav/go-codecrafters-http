@@ -61,13 +61,13 @@ func main() {
 
 				conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s\r\n", len(randomString), randomString)))
 			case strings.HasPrefix(path, "/files/"):
-				method := strings.ToLower(startLineParts[0])
+				method := startLineParts[0]
 
 				filename, _ := strings.CutPrefix(path, "/files/")
 				filepath := strings.Join([]string{*dir, filename}, string(os.PathSeparator))
 
 				switch method {
-				case "get":
+				case "GET":
 					if dir == nil {
 						conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 
@@ -89,7 +89,7 @@ func main() {
 					}
 
 					conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: %d\r\n\r\n%s\r\n", len(data), string(data))))
-				case "post":
+				case "POST":
 					reqBody, _ := strings.CutPrefix(reqFields[len(reqFields)-1], "\r\n")
 					fileData := bytes.Trim([]byte(reqBody), "\x00")
 
@@ -101,7 +101,7 @@ func main() {
 						fmt.Println("Failed to write a file ", filepath, err.Error())
 					}
 
-					conn.Write([]byte("HTTP/1.1 201 Created\r\n"))
+					conn.Write([]byte("HTTP/1.1 201 Created\r\n\r\n"))
 				default:
 					conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 				}
