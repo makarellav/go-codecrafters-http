@@ -45,6 +45,10 @@ func main() {
 
 	if path == "/" {
 		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	} else if strings.HasPrefix(path, "/echo/") {
+		randomString, _ := strings.CutPrefix(path, "/echo/")
+
+		conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s\r\n", len(randomString), randomString)))
 	} else {
 		conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 	}
