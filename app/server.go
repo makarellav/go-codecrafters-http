@@ -22,40 +22,43 @@ func main() {
 		os.Exit(1)
 	}
 
-	conn, err := l.Accept()
-	defer conn.Close()
+	for {
+		conn, err := l.Accept()
 
-	if err != nil {
-		fmt.Println("Error accepting connection ", err.Error())
-		os.Exit(1)
-	}
+		if err != nil {
+			fmt.Println("Error accepting connection ", err.Error())
+			os.Exit(1)
+		}
 
-	data := make([]byte, 1024)
+		data := make([]byte, 1024)
 
-	_, err = conn.Read(data)
+		_, err = conn.Read(data)
 
-	if err != nil {
-		fmt.Println("Failed to read data ", err.Error())
-		os.Exit(1)
-	}
+		if err != nil {
+			fmt.Println("Failed to read data ", err.Error())
+			os.Exit(1)
+		}
 
-	reqFields := strings.Split(string(data), "\r\n")
-	startLine := reqFields[0]
+		reqFields := strings.Split(string(data), "\r\n")
+		startLine := reqFields[0]
 
-	path := strings.Fields(startLine)[1]
+		path := strings.Fields(startLine)[1]
 
-	switch {
-	case path == "/":
-		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
-	case path == "/user-agent":
-		userAgent, _ := strings.CutPrefix(reqFields[2], "User-Agent: ")
+		switch {
+		case path == "/":
+			conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+		case path == "/user-agent":
+			userAgent, _ := strings.CutPrefix(reqFields[2], "User-Agent: ")
 
-		conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s\r\n", len(userAgent), userAgent)))
-	case strings.HasPrefix(path, "/echo/"):
-		randomString, _ := strings.CutPrefix(path, "/echo/")
+			conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s\r\n", len(userAgent), userAgent)))
+		case strings.HasPrefix(path, "/echo/"):
+			randomString, _ := strings.CutPrefix(path, "/echo/")
 
-		conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s\r\n", len(randomString), randomString)))
-	default:
-		conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+			conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s\r\n", len(randomString), randomString)))
+		default:
+			conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+		}
+
+		conn.Close()
 	}
 }
