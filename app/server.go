@@ -15,6 +15,7 @@ func main() {
 	fmt.Println("Logs from your program will appear here!")
 
 	l, err := net.Listen("tcp", "0.0.0.0:4221")
+	defer l.Close()
 
 	if err != nil {
 		fmt.Println("Failed to bind to port 4221")
@@ -22,13 +23,14 @@ func main() {
 	}
 
 	conn, err := l.Accept()
+	defer conn.Close()
 
 	if err != nil {
 		fmt.Println("Error accepting connection ", err.Error())
 		os.Exit(1)
 	}
 
-	var data []byte
+	data := make([]byte, 1024)
 
 	_, err = conn.Read(data)
 
@@ -38,7 +40,8 @@ func main() {
 	}
 
 	startLine := strings.Split(string(data), "\r\n")[0]
-	path := strings.Split(startLine, " ")[1]
+
+	path := strings.Fields(startLine)[1]
 
 	if path == "/" {
 		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
